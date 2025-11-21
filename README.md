@@ -7,198 +7,195 @@
 
 ## 📌 Objetivo do Projeto
 
-Este projeto implementa um **Activity Provider** integrado à plataforma **Inven!RA**, simulando a atividade educacional **“Jogo Sopa de Letras”**.
+Este projeto implementa um **Activity Provider** totalmente compatível com a plataforma **Inven!RA**, seguindo integralmente:
 
-A implementação faz parte da unidade curricular **Arquitetura e Padrões de Software (APSI)**, aplicando:
+- A especificação oficial *«Activity Providers na Inven!RA»*  
+- As instruções da atividade **“Implementando um servidor com Web services RESTful”**  
+- A proposta do projeto **Sopa de Letras**, contendo parâmetros configuráveis e analytics definidos pelo autor.
 
-- Arquitetura orientada a serviços  
-- Padrões de criação (Factory Method / Simple Factory, descritos no relatório)  
-- Web services RESTful  
-- Integração com plataforma educativa (Inven!RA)
+O objetivo é fornecer um serviço RESTful que permita à Inven!RA:
 
-O Activity Provider disponibiliza um servidor com Web services RESTful acessível publicamente, conforme especificação da atividade **“Activity Providers na Inven!RA – Implementando um servidor com Web services RESTful”**.
+✔ renderizar a página de configuração da atividade  
+✔ obter a lista de parâmetros configuráveis  
+✔ realizar o *deploy* de uma instância da atividade  
+✔ consultar analytics de alunos  
+✔ conhecer os analytics que a atividade disponibiliza  
 
 ---
 
 ## 🛠 Tecnologias Utilizadas
 
 - **Python 3.x**  
-- **FastAPI** – Framework para APIs REST  
+- **FastAPI** – Framework moderno para APIs REST  
 - **Uvicorn** – Servidor ASGI  
-- **Render.com** – Hospedagem e disponibilização online  
-- **Git + GitHub** – Versionamento e histórico de evolução do projeto  
+- **Render.com** – Deploy público da API  
+- **Git/GitHub** – Versionamento e entrega contínua  
 
 ---
 
-## 🌐 URL de Produção (Render)
+# 🌐 URL de Produção (Render)
 
-O Activity Provider está disponível publicamente em:
+O serviço está disponível publicamente em:
 
-```text
+```
 https://activity-provider-invenra.onrender.com/
 ```
 
-### Endpoints principais (com URL completa)
+---
 
-| Método | Endpoint | URL completa | Descrição |
-|--------|----------|-------------|-----------|
-| `GET`  | `/config` | `https://activity-provider-invenra.onrender.com/config` | Configuração básica da atividade |
-| `GET`  | `/params` | `https://activity-provider-invenra.onrender.com/params` | Lista de parâmetros configuráveis pelo instrutor |
-| `POST` | `/deploy` | `https://activity-provider-invenra.onrender.com/deploy` | Criação de uma instância da atividade (usa padrão de criação) |
-| `GET`  | `/analytics/available` | `https://activity-provider-invenra.onrender.com/analytics/available` | Tipos de analytics disponíveis |
-| `GET`  | `/analytics` | `https://activity-provider-invenra.onrender.com/analytics` | Dados de analytics simulados |
+# 📡 Endpoints Implementados (versão final)
 
-Documentação automática (Swagger UI):
+Todos os serviços abaixo seguem **exatamente** a especificação da Inven!RA.
 
-```text
-https://activity-provider-invenra.onrender.com/docs
+---
+
+## 1. **Página de configuração da atividade**  
+### `GET /config`
+
+Retorna **HTML**, não JSON.
+
+Este HTML contém os campos:
+
+| Campo | Tipo | Descrição |
+|-------|-------|-----------|
+| nome | text | Nome da atividade |
+| orientacoes | textarea | Instruções para o aluno |
+| tempoLimiteSegundos | number | Tempo máximo (segundos) |
+| tamanhoQuadro | number | Tamanho da grelha (NxN) |
+| sensivelMaiusculas | checkbox | Caso sensível |
+| permitirDiagonais | checkbox | Permitir diagonais |
+| parametrosPalavras | textarea (JSON) | Palavras da atividade |
+
+---
+
+## 2. **Lista de parâmetros configuráveis**  
+### `GET /params`
+
+Devolve **JSON**:
+
+```json
+[
+  {"name": "nome", "type": "text/plain"},
+  {"name": "orientacoes", "type": "text/plain"},
+  {"name": "tempoLimiteSegundos", "type": "integer"},
+  {"name": "tamanhoQuadro", "type": "integer"},
+  {"name": "sensivelMaiusculas", "type": "boolean"},
+  {"name": "permitirDiagonais", "type": "boolean"},
+  {"name": "parametrosPalavras", "type": "json"}
+]
 ```
 
 ---
 
-## 📂 Estrutura do Projeto
+## 3. **Deploy da atividade (primeira fase)**  
+### `GET /deploy?activityID=XXXX`
 
-```text
+A Inven!RA chama este serviço ao disponibilizar a atividade aos alunos.
+
+Exemplo de resposta:
+
+```json
+{
+  "activityID": "ABC123",
+  "user_url": "https://activity-provider-invenra.onrender.com/play?activityID=ABC123"
+}
+```
+
+---
+
+## 4. **Analytics de atividade**  
+### `POST /analytics`
+
+Entrada:
+
+```json
+{ "activityID": "ABC123" }
+```
+
+Saída (lista de alunos + analytics):
+
+```json
+[
+  {
+    "inveniraStdID": 1001,
+    "quantAnalytics": [
+      {"name": "tentativas_total", "value": 5},
+      {"name": "tentativas_corretas", "value": 4},
+      {"name": "tentativas_erradas", "value": 1},
+      {"name": "tempo_medio_por_acerto_s", "value": 42.5},
+      {"name": "percentual_acertos", "value": 80.0},
+      {"name": "percentual_erros", "value": 20.0}
+    ],
+    "qualAnalytics": [
+      {"name": "ultima_palavra_encontrada", "value": "house"},
+      {"name": "sequencia_cliques", "value": ["h(1,1)", "o(1,2)", "u(1,3)", "s(1,4)", "e(1,5)"]}
+    ]
+  }
+]
+```
+
+---
+
+## 5. **Lista de analytics disponíveis**  
+### `GET /analytics/available`
+
+```json
+{
+  "qualAnalytics": [
+    {"name": "ultima_palavra_encontrada", "type": "text/plain"},
+    {"name": "sequencia_cliques", "type": "array/string"}
+  ],
+  "quantAnalytics": [
+    {"name": "tentativas_total", "type": "integer"},
+    {"name": "tentativas_corretas", "type": "integer"},
+    {"name": "tentativas_erradas", "type": "integer"},
+    {"name": "tempo_medio_por_acerto_s", "type": "number"},
+    {"name": "percentual_acertos", "type": "number"},
+    {"name": "percentual_erros", "type": "number"}
+  ]
+}
+```
+
+---
+
+# 📂 Estrutura do Projeto
+
+```
 activity_provider_invenra/
 │
-├── main.py                # Código principal da API FastAPI
-├── requirements.txt       # Dependências do projeto
-├── README.md              # Documentação do projeto
-└── .gitignore             # Arquivos ignorados pelo Git
+├── main.py
+├── requirements.txt
+├── README.md
+└── .gitignore
 ```
 
 ---
 
-## 🧱 Arquitetura do Activity Provider
+# ▶️ Executando Localmente
 
-A arquitetura adotada considera:
-
-- A plataforma **Inven!RA** como cliente dos serviços REST
-- O **Activity Provider** como servidor externo
-- Um componente responsável por gerir o **Jogo Sopa de Letras** (instâncias da atividade)
-- Um módulo de **Analytics** responsável por enviar dados da atividade
-- Um repositório de dados (banco de dados) previsto para fases futuras do projeto
-
-### Diagrama de Componentes
-
-O diagrama abaixo foi produzido na fase de conceção da arquitetura e representa a interação entre:
-
-- Plataforma Inven!RA  
-- Activity Provider  
-- Componente de Jogos  
-- Módulo de Analytics  
-- Banco de dados  
-
-Para exibir a imagem corretamente no GitHub, salvar o diagrama na pasta `docs/` com o nome:
-
-```text
-docs/diagrama-componentes-sopa-letras-invenra.png
 ```
-
-E o README referencia a imagem assim:
-
-```markdown
-![Diagrama de Componentes – Sopa de Letras / Inven!RA](docs/diagrama-componentes-sopa-letras-invenra.png)
-```
-
----
-
-## ▶️ Como Executar Localmente
-
-### 1. Criar ambiente virtual
-
-**Windows:**
-
-```bash
 python -m venv venv
 venv\Scripts\activate
-```
-
-**Linux/Mac:**
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 2. Instalar dependências
-
-```bash
 pip install -r requirements.txt
-```
-
-### 3. Executar o servidor
-
-```bash
 uvicorn main:app --reload
 ```
 
-A API ficará disponível em:
-
-- `http://127.0.0.1:8000`
-- Swagger UI: `http://127.0.0.1:8000/docs`
-
 ---
 
-## 🌐 Deploy no Render – Configuração Utilizada
+# 🌐 Deploy no Render – Configuração
 
-No serviço Web do Render, foram definidos:
-
-- **Build Command**
-
-```bash
+**Build:**  
+```
 pip install -r requirements.txt
 ```
 
-- **Start Command**
-
-```bash
+**Start:**  
+```
 uvicorn main:app --host 0.0.0.0 --port $PORT
 ```
-
-- **Branch:** `main`  
-- **Plano:** Free  
-- **Runtime:** Python  
-
-A cada *push* para a branch `main`, o Render pode ser configurado para atualizar automaticamente a aplicação (redeploy automático).
-
 ---
 
-## 🏆 Estado Atual do Projeto
-
-- [x] Arquitetura definida (diagrama de componentes)  
-- [x] Serviços REST implementados em FastAPI  
-- [x] Teste local concluído com sucesso  
-- [x] Deploy realizado no Render (URL pública disponível)  
-- [ ] Integração e testes finais com a plataforma Inven!RA  
-- [ ] Documentação detalhada do padrão de criação no relatório da UC APSI  
-
----
-
-## 🧾 Versões e Entregas (Git/GitHub)
-
-Este repositório será utilizado para controlar a evolução do projeto, permitindo:
-
-- Marcação da versão correspondente à entrega **“Activity Providers na Inven!RA – Implementando um servidor com Web services RESTful”** através de *tags* no Git.  
-- Manter um histórico de melhorias e refatorações posteriores à entrega.
-
-Exemplo de tag sugerida para a versão de entrega:
-
-```bash
-git tag -a v1.0-entrega-apsi -m "Entrega APSI - Activity Provider InvenRA (servidor RESTful implementado)"
-git push origin v1.0-entrega-apsi
-```
-
----
-
-## 📄 Licença
-
-Projeto acadêmico desenvolvido para a unidade curricular **Arquitetura e Padrões de Software (APSI)** do Mestrado em Tecnologias e Sistemas Informáticos Web (MEIW) – Universidade Aberta / UTAD.
-
----
-
-## 🔗 Contato
+# 🔗 Contato
 
 **Weber Marcelo Guirra de Souza**  
-Mestrado em Tecnologias e Sistemas Informáticos Web (MEIW)  
-Universidade Aberta / UTAD
+MEIW – Universidade Aberta / UTAD  
