@@ -1,184 +1,279 @@
 from fastapi import FastAPI, Query
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Union
+
+import os
 from datetime import datetime
 
 app = FastAPI(
-    title="Activity Provider - Sopa de Letras - Inven!RA",
+    title="Activity Provider – Sopa de Letras – Inven!RA",
     version="1.0.0",
-    description="Activity Provider de exemplo para integração com a plataforma Inven!RA."
+    description=(
+        "Activity Provider de exemplo para a plataforma Inven!RA, "
+        "implementando os serviços RESTful exigidos na atividade "
+        "«Activity Providers na Inven!RA – Implementando um servidor com Web services RESTful»."
+    ),
 )
 
-# ---------- MODELOS ----------
+# -------------------------------------------------------------------
+# 1. Definições de parâmetros e analytics conforme proposta do projeto
+# -------------------------------------------------------------------
+# Parâmetros devolvidos por json_params_url (Figura 2 da proposta)
+PARAM_DEFS = [
+    {"name": "nome", "type": "text/plain"},
+    {"name": "orientacoes", "type": "text/plain"},
+    {"name": "tempoLimiteSegundos", "type": "integer"},
+    {"name": "tamanhoQuadro", "type": "integer"},
+    {"name": "sensivelMaiusculas", "type": "boolean"},
+    {"name": "permitirDiagonais", "type": "boolean"},
+    {"name": "parametrosPalavras", "type": "json"},
+]
+
+# Analytics disponíveis (Figura 3 da proposta)
+ANALYTICS_DEFS = {
+    "qualAnalytics": [
+        {"name": "ultima_palavra_encontrada", "type": "text/plain"},
+        {"name": "sequencia_cliques", "type": "array/string"},
+    ],
+    "quantAnalytics": [
+        {"name": "tentativas_total", "type": "integer"},
+        {"name": "tentativas_corretas", "type": "integer"},
+        {"name": "tentativas_erradas", "type": "integer"},
+        {"name": "tempo_medio_por_acerto_s", "type": "number"},
+        {"name": "percentual_acertos", "type": "number"},
+        {"name": "percentual_erros", "type": "number"},
+    ],
+}
+
+# Armazenamento em memória para instâncias e analytics simulados
+DEPLOYED_ACTIVITIES = {}  # activityID -> user_url (e, no futuro, config, etc.)
 
 
-class ParameterDefinition(BaseModel):
+# -------------------------------------------------------------------
+# 2. Modelos Pydantic para pedidos/respostas
+# -------------------------------------------------------------------
+class AnalyticsRequest(BaseModel):
+    activityID: str
+
+
+class QuantRecord(BaseModel):
     name: str
-    type: str
-    label: str
-    default: Optional[str] = None
-    required: bool = True
-    min: Optional[int] = None
-    max: Optional[int] = None
-    options: Optional[List[str]] = None  # para listas fechadas
+    value: Union[int, float, bool]
 
 
-class DeployRequest(BaseModel):
-    activity_id: str
-    parameters: dict   # valores escolhidos pelo instrutor
-    course_id: Optional[str] = None
-    teacher_id: Optional[str] = None
-
-
-class DeployResponse(BaseModel):
-    instance_id: str
-    activity_launch_url: str
-    created_at: datetime
-    summary: dict
-
-
-class AnalyticsMetric(BaseModel):
-    id: str
+class QualRecord(BaseModel):
     name: str
-    description: str
-    type: str    # number, string, event, etc.
+    value: Union[str, List[str]]
 
 
-class AnalyticsRecord(BaseModel):
-    user_id: str
-    metric_id: str
-    value: float
-    timestamp: datetime
+class StudentAnalytics(BaseModel):
+    inveniraStdID: int
+    quantAnalytics: List[QuantRecord]
+    qualAnalytics: List[QualRecord]
 
 
-class AnalyticsResponse(BaseModel):
-    instance_id: str
-    records: List[AnalyticsRecord]
-
-
-# ---------- ENDPOINTS ----------
-
-@app.get("/config")
+# -------------------------------------------------------------------
+# 3. Página de configuração (config_url) – GET /config
+#    → devolve HTML, não JSON
+# -------------------------------------------------------------------
+@app.get("/config", response_class=HTMLResponse)
 async def get_config():
     """
-    Configuração básica da atividade.
+    Página de configuração da atividade (config_url).
+
+    Devolve um bloco HTML com os campos de configuração.
+    A Inven!RA irá usar este HTML para apresentar a página de configuração
+    ao professor/formador e recolher os valores dos campos.
     """
+    html = """
+    <!DOCTYPE html>
+    <html lang="pt">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Configuração – Sopa de Letras</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 1.5rem; }
+            h1 { font-size: 1.4rem; }
+            label { display: block; margin-top: 0.8rem; font-weight: bold; }
+            input[type="text"], input[type="number"], textarea, select {
+                width: 100%; max-width: 600px; padding: 0.3rem; margin-top: 0.2rem;
+            }
+            small { color: #555; display: block; margin-top: 0.15rem; }
+            .checkbox-group { margin-top: 0.5rem; }
+        </style>
+    </head>
+    <body>
+        <h1>Configuração da Atividade – Jogo Sopa de Letras</h1>
+
+        <label for="nome">Nome da atividade</label>
+        <input id="nome" name="nome" type="text" value="Sopa de Letras – Vocabulário" />
+        <small>Identificação da atividade para o professor.</small>
+
+        <label for="orientacoes">Orientações para o aluno</label>
+        <textarea id="orientacoes" name="orientacoes" rows="4">
+Encontre todas as palavras relacionadas ao tema proposto, no idioma alvo, dentro do tempo limite.
+        </textarea>
+        <small>Texto exibido aos alunos com instruções da atividade.</small>
+
+        <label for="tempoLimiteSegundos">Tempo limite por tentativa (segundos)</label>
+        <input id="tempoLimiteSegundos" name="tempoLimiteSegundos" type="number" value="300" min="30" max="3600" />
+        <small>Tempo máximo para o aluno completar uma tentativa.</small>
+
+        <label for="tamanhoQuadro">Tamanho do quadro (linhas/colunas)</label>
+        <input id="tamanhoQuadro" name="tamanhoQuadro" type="number" value="12" min="6" max="20" />
+        <small>Define o tamanho da grelha de letras.</small>
+
+        <div class="checkbox-group">
+            <input id="sensivelMaiusculas" name="sensivelMaiusculas" type="checkbox" />
+            <label for="sensivelMaiusculas" style="display:inline; font-weight:normal;">
+                Diferenciar maiúsculas e minúsculas
+            </label>
+        </div>
+
+        <div class="checkbox-group">
+            <input id="permitirDiagonais" name="permitirDiagonais" type="checkbox" checked />
+            <label for="permitirDiagonais" style="display:inline; font-weight:normal;">
+                Permitir palavras na diagonal
+            </label>
+        </div>
+
+        <label for="parametrosPalavras">Parâmetros de palavras (JSON)</label>
+        <textarea id="parametrosPalavras" name="parametrosPalavras" rows="6">
+{
+  "idioma_nativo": ["cachorro", "gato", "casa"],
+  "idioma_alvo": ["dog", "cat", "house"]
+}
+        </textarea>
+        <small>JSON com listas de palavras no idioma nativo e no idioma de aprendizagem.</small>
+
+        <!--
+            Não há botão "Guardar" ou "OK": a Inven!RA recolhe os valores
+            diretamente dos campos desta página.
+        -->
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html)
+
+
+# -------------------------------------------------------------------
+# 4. Lista de parâmetros (json_params_url) – GET /params
+# -------------------------------------------------------------------
+@app.get("/params")
+async def get_params():
+    """
+    json_params_url – devolve a lista de parâmetros configuráveis,
+    conforme a proposta do Activity Provider.
+    """
+    return PARAM_DEFS
+
+
+# -------------------------------------------------------------------
+# 5. Deploy de atividade (user_url) – GET /deploy
+#    Primeira fase do deploy (não é "Provide activity").
+# -------------------------------------------------------------------
+def _get_base_url() -> str:
+    """
+    Tenta descobrir a BASE_URL a partir de variável de ambiente.
+    Se não existir, usa localhost. No Render, defina BASE_URL
+    como https://activity-provider-invenra.onrender.com
+    """
+    return os.getenv("BASE_URL", "http://127.0.0.1:8000")
+
+
+@app.get("/deploy")
+async def deploy_activity(
+    activityID: str = Query(...,
+                            description="ID da instância da atividade na Inven!RA")
+):
+    """
+    Serviço de deploy (user_url) – primeira fase.
+    A Inven!RA faz um GET com o parâmetro activityID.
+    O Activity Provider prepara-se para guardar analytics e devolve
+    o URL que os alunos irão usar para aceder à atividade.
+    """
+    base_url = _get_base_url()
+    user_url = f"{base_url}/play?activityID={activityID}"
+
+    # Regista em memória (simulação) que esta atividade foi "deployada"
+    DEPLOYED_ACTIVITIES[activityID] = {
+        "user_url": user_url,
+        "created_at": datetime.utcnow().isoformat(),
+    }
+
     return {
-        "activity_id": "sopa-letras-pt-001",
-        "name": "Jogo Sopa de Letras",
-        "description": "Atividade de sopa de letras para treino de vocabulário.",
-        "version": "1.0.0",
-        "author": "Weber Marcelo Guirra de Souza",
-        "language": "pt",
-        "max_players": 1
+        "activityID": activityID,
+        "user_url": user_url,
     }
 
 
-@app.get("/params", response_model=List[ParameterDefinition])
-async def get_params():
-    """
-    Parâmetros configuráveis apresentados ao instrutor na Inven!RA.
-    """
-    return [
-        ParameterDefinition(
-            name="grid_size",
-            type="integer",
-            label="Tamanho da grelha (linhas/colunas)",
-            default="12",
-            min=6,
-            max=20,
-            required=True
-        ),
-        ParameterDefinition(
-            name="time_limit",
-            type="integer",
-            label="Tempo limite (segundos)",
-            default="300",
-            min=60,
-            max=1800,
-            required=True
-        ),
-        ParameterDefinition(
-            name="difficulty",
-            type="string",
-            label="Nível de dificuldade",
-            default="medio",
-            options=["facil", "medio", "dificil"],
-            required=True
-        )
-    ]
-
-
-@app.post("/deploy", response_model=DeployResponse)
-async def deploy_activity(payload: DeployRequest):
-    """
-    Cria uma instância da atividade com base nos parâmetros recebidos.
-    Nesta fase, apenas devolve dados de exemplo.
-    """
-    # Em produção geraríamos um ID único de verdade (UUID, por ex.)
-    instance_id = f"{payload.activity_id}-inst-001"
-
-    launch_url = f"https://seu-dominio-ou-host/sopa-letras?instance_id={instance_id}"
-
-    return DeployResponse(
-        instance_id=instance_id,
-        activity_launch_url=launch_url,
-        created_at=datetime.utcnow(),
-        summary={
-            "parameters": payload.parameters,
-            "course_id": payload.course_id,
-            "teacher_id": payload.teacher_id
-        }
-    )
-
-
-@app.get("/analytics/available", response_model=List[AnalyticsMetric])
+# -------------------------------------------------------------------
+# 6. Lista de analytics disponíveis (analytics_list_url) – GET
+# -------------------------------------------------------------------
+@app.get("/analytics/available")
 async def get_available_analytics():
     """
-    Lista os tipos de analytics que este Activity Provider consegue devolver.
+    analytics_list_url – devolve lista de analytics disponíveis
+    (qualitativos e quantitativos), conforme a proposta.
     """
-    return [
-        AnalyticsMetric(
-            id="score",
-            name="Pontuação final",
-            description="Pontuação total obtida pelo aluno na atividade.",
-            type="number"
-        ),
-        AnalyticsMetric(
-            id="time_spent",
-            name="Tempo gasto",
-            description="Tempo total gasto pelo aluno na atividade (segundos).",
-            type="number"
-        )
-    ]
+    return ANALYTICS_DEFS
 
 
-@app.get("/analytics", response_model=AnalyticsResponse)
-async def get_analytics(
-    instance_id: str = Query(..., description="ID da instância de atividade")
-):
+# -------------------------------------------------------------------
+# 7. Analytics de atividade (analytics_url) – POST /analytics
+# -------------------------------------------------------------------
+@app.post("/analytics", response_model=List[StudentAnalytics])
+async def get_analytics(payload: AnalyticsRequest):
     """
-    Devolve dados de analytics (exemplo) para uma instância da atividade.
-    Nesta fase, devolvemos dados estáticos/simulados.
+    analytics_url – a Inven!RA envia um JSON com { "activityID": "..." }.
+    Devolve uma lista com os dados analíticos de todos os alunos que
+    realizaram a atividade, usando os nomes de métricas definidos na proposta.
+
+    Nesta fase do projeto, os dados são simulados.
     """
-    agora = datetime.utcnow()
+    activity_id = payload.activityID
 
-    records = [
-        AnalyticsRecord(
-            user_id="aluno1",
-            metric_id="score",
-            value=85,
-            timestamp=agora
-        ),
-        AnalyticsRecord(
-            user_id="aluno1",
-            metric_id="time_spent",
-            value=240,
-            timestamp=agora
-        )
-    ]
+    # Exemplo de dados simulados para dois alunos
+    now = datetime.utcnow().isoformat()
 
-    return AnalyticsResponse(
-        instance_id=instance_id,
-        records=records
+    aluno1 = StudentAnalytics(
+        inveniraStdID=1001,
+        quantAnalytics=[
+            QuantRecord(name="tentativas_total", value=5),
+            QuantRecord(name="tentativas_corretas", value=4),
+            QuantRecord(name="tentativas_erradas", value=1),
+            QuantRecord(name="tempo_medio_por_acerto_s", value=42.5),
+            QuantRecord(name="percentual_acertos", value=80.0),
+            QuantRecord(name="percentual_erros", value=20.0),
+        ],
+        qualAnalytics=[
+            QualRecord(name="ultima_palavra_encontrada", value="house"),
+            QualRecord(
+                name="sequencia_cliques",
+                value=["h(1,1)", "o(1,2)", "u(1,3)", "s(1,4)", "e(1,5)"],
+            ),
+        ],
     )
+
+    aluno2 = StudentAnalytics(
+        inveniraStdID=1002,
+        quantAnalytics=[
+            QuantRecord(name="tentativas_total", value=3),
+            QuantRecord(name="tentativas_corretas", value=1),
+            QuantRecord(name="tentativas_erradas", value=2),
+            QuantRecord(name="tempo_medio_por_acerto_s", value=60.0),
+            QuantRecord(name="percentual_acertos", value=33.3),
+            QuantRecord(name="percentual_erros", value=66.7),
+        ],
+        qualAnalytics=[
+            QualRecord(name="ultima_palavra_encontrada", value="cat"),
+            QualRecord(
+                name="sequencia_cliques",
+                value=["c(2,1)", "a(2,2)", "t(2,3)"],
+            ),
+        ],
+    )
+
+    # Aqui poderíamos filtrar por activity_id se tivéssemos persistência real.
+    return [aluno1, aluno2]
