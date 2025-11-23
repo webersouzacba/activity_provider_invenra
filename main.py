@@ -4,17 +4,7 @@ from fastapi import FastAPI, Query
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import List, Union
-
-
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # ou ["http://127.0.0.1:5500"]
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
+from fastapi.middleware.cors import CORSMiddleware  # <- import correto
 
 app = FastAPI(
     title="Activity Provider – Sopa de Letras – Inven!RA",
@@ -26,6 +16,12 @@ app = FastAPI(
     ),
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # ou ["http://127.0.0.1:5500"]
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Definições de parâmetros e analytics conforme proposta do projeto
 
