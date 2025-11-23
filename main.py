@@ -4,7 +4,8 @@ from fastapi import FastAPI, Query
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import List, Union
-from fastapi.middleware.cors import CORSMiddleware  # <- import correto
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(
     title="Activity Provider – Sopa de Letras – Inven!RA",
@@ -22,6 +23,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 # Definições de parâmetros e analytics conforme proposta do projeto
 
