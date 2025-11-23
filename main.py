@@ -16,10 +16,10 @@ app = FastAPI(
     ),
 )
 
-# -------------------------------------------------------------------
-# 1. Definições de parâmetros e analytics conforme proposta do projeto
-# -------------------------------------------------------------------
-# Parâmetros devolvidos por json_params_url (Figura 2 da proposta)
+
+# Definições de parâmetros e analytics conforme proposta do projeto
+
+
 PARAM_DEFS = [
     {"name": "nome", "type": "text/plain"},
     {"name": "orientacoes", "type": "text/plain"},
@@ -30,7 +30,8 @@ PARAM_DEFS = [
     {"name": "parametrosPalavras", "type": "json"},
 ]
 
-# Analytics disponíveis (Figura 3 da proposta)
+# Analytics disponíveis
+
 ANALYTICS_DEFS = {
     "qualAnalytics": [
         {"name": "ultima_palavra_encontrada", "type": "text/plain"},
@@ -47,12 +48,12 @@ ANALYTICS_DEFS = {
 }
 
 # Armazenamento em memória para instâncias e analytics simulados
+
 DEPLOYED_ACTIVITIES = {}  # activityID -> user_url (e, no futuro, config, etc.)
 
 
-# -------------------------------------------------------------------
-# 2. Modelos Pydantic para pedidos/respostas
-# -------------------------------------------------------------------
+# Modelos Pydantic para pedidos/respostas
+
 class AnalyticsRequest(BaseModel):
     activityID: str
 
@@ -73,10 +74,9 @@ class StudentAnalytics(BaseModel):
     qualAnalytics: List[QualRecord]
 
 
-# -------------------------------------------------------------------
-# 3. Página de configuração (config_url) – GET /config
-#    → devolve HTML, não JSON
-# -------------------------------------------------------------------
+# Página de configuração (config_url) – GET /config
+#    Devolve HTML, não JSON
+
 @app.get("/config", response_class=HTMLResponse)
 async def get_config():
     """
@@ -157,9 +157,8 @@ Encontre todas as palavras relacionadas ao tema proposto, no idioma alvo, dentro
     return HTMLResponse(content=html)
 
 
-# -------------------------------------------------------------------
-# 4. Lista de parâmetros (json_params_url) – GET /params
-# -------------------------------------------------------------------
+# Lista de parâmetros (json_params_url) – GET /params
+
 @app.get("/params")
 async def get_params():
     """
@@ -169,10 +168,9 @@ async def get_params():
     return PARAM_DEFS
 
 
-# -------------------------------------------------------------------
-# 5. Deploy de atividade (user_url) – GET /deploy
-#    Primeira fase do deploy (não é "Provide activity").
-# -------------------------------------------------------------------
+# Deploy de atividade (user_url) – GET /deploy
+#    Primeira fase do deploy
+
 def _get_base_url() -> str:
     """
     Tenta descobrir a BASE_URL a partir de variável de ambiente.
@@ -208,9 +206,8 @@ async def deploy_activity(
     }
 
 
-# -------------------------------------------------------------------
-# 6. Lista de analytics disponíveis (analytics_list_url) – GET
-# -------------------------------------------------------------------
+# Lista de analytics disponíveis (analytics_list_url) – GET
+
 @app.get("/analytics/available")
 async def get_available_analytics():
     """
@@ -220,9 +217,8 @@ async def get_available_analytics():
     return ANALYTICS_DEFS
 
 
-# -------------------------------------------------------------------
-# 7. Analytics de atividade (analytics_url) – POST /analytics
-# -------------------------------------------------------------------
+# Analytics de atividade (analytics_url) – POST /analytics
+
 @app.post("/analytics", response_model=List[StudentAnalytics])
 async def get_analytics(payload: AnalyticsRequest):
     """
