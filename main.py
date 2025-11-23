@@ -1,10 +1,20 @@
+from datetime import datetime
+import os
 from fastapi import FastAPI, Query
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import List, Union
 
-import os
-from datetime import datetime
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # ou ["http://127.0.0.1:5500"]
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 app = FastAPI(
     title="Activity Provider – Sopa de Letras – Inven!RA",

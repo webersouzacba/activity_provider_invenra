@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Teste do serviço POST /analytics</title>
+</head>
+<body>
+  <h3>Teste do serviço POST /analytics</h3>
+
+  <button onclick="testar()">Enviar pedido de analytics</button>
+
+  <h4>Resposta:</h4>
+  <pre id="resposta"></pre>
+
+  <script>
+    async function testar() {
+      const url = "https://activity-provider-invenra.onrender.com/analytics";
+      const body = { activityID: "TESTE123" };
+
+      try {
+        const resp = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(body)
+        });
+
+        const data = await resp.json();
+        document.getElementById("resposta").textContent =
+          JSON.stringify(data, null, 2);
+      } catch (e) {
+        document.getElementById("resposta").textContent =
+          "Erro ao chamar o serviço: " + e;
+      }
+    }
+  </script>
+</body>
+</html>
