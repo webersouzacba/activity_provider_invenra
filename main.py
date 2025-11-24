@@ -27,6 +27,10 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
+@app.get("/")
+async def root():
+    return {"message": "Hello, World! by Weber Souza - MEIW - UAB/UTAD"}
+
 # Definições de parâmetros e analytics conforme proposta do projeto
 
 
