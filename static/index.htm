@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Activity Provider – Inven!RA</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2rem;
+            background: #f7f7f7;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .card {
+            background: white;
+            padding: 1.4rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            max-width: 700px;
+        }
+        ul {
+            line-height: 1.8;
+        }
+        a {
+            color: #0066cc;
+            font-weight: bold;
+        }
+        a:hover {
+            color: #003d80;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Hello World! 👋</h1>
+        <p>Bem-vindo ao <strong>Activity Provider – Sopa de Letras</strong>.</p>
+        <p>Abaixo encontra uma lista dos serviços REST disponíveis:</p>
+
+        <h2>📡 Endpoints</h2>
+        <ul>
+            <li><a href="/config" target="_blank">/config</a> – Página de configuração da atividade</li>
+            <li><a href="/params" target="_blank">/params</a> – Lista de parâmetros configuráveis</li>
+            <li><a href="/analytics/available" target="_blank">/analytics/available</a> – Analytics disponíveis</li>
+            <li><a href="/deploy?activityID=TESTE123" target="_blank">/deploy?activityID=TESTE123</a> – Deploy de teste</li>
+        </ul>
+
+        <h2>🧪 Teste de Analytics (POST)</h2>
+        <ul>
+            <li><a href="/static/teste_analytics_POST.html" target="_blank">Página de teste do POST /analytics</a></li>
+        </ul>
+
+        <h2>🌐 Página principal da API</h2>
+        <ul>
+            <li><a href="/" target="_blank">/</a> – Resposta padrão JSON</li>
+        </ul>
+    </div>
+
+</body>
+</html>

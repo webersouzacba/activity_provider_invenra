@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from typing import List, Union
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 app = FastAPI(
     title="Activity Provider – Sopa de Letras – Inven!RA",
@@ -27,9 +28,10 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
-@app.get("/")
-async def root():
-    return {"message": "Hello, World! by Weber Souza - MEIW - UAB/UTAD"}
+@app.get("/", include_in_schema=False)
+async def home():
+    return FileResponse("static/index.html")
+
 
 # Definições de parâmetros e analytics conforme proposta do projeto
 
