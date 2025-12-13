@@ -2,58 +2,95 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Activity Provider – Inven!RA</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 2rem;
-            background: #f7f7f7;
-        }
-        h1 {
-            color: #2c3e50;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
         }
         .card {
             background: white;
-            padding: 1.4rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-            max-width: 700px;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        h2 {
+            color: #555;
+            font-size: 1.1rem;
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+            font-weight: normal;
+        }
+        .project-title {
+            color: #0066cc;
+            font-weight: bold;
+            font-size: 1.3rem;
+            margin-top: 1.5rem;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-top: 1.5rem;
+            color: #333;
         }
         ul {
             line-height: 1.8;
+            background: #fafafa;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            border: 1px solid #eee;
         }
         a {
             color: #0066cc;
             font-weight: bold;
+            text-decoration: none;
         }
         a:hover {
-            color: #003d80;
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h1>Hello World! 👋</h1>
-        <p>Bem-vindo ao <strong>Activity Provider – Sopa de Letras</strong>.</p>
-        <p>Abaixo encontra uma lista dos serviços REST disponíveis:</p>
+        <h1>MEIW – Mestrado em Engenharia Informática e Tecnologia Web</h1>
+        <h2>Arquitetura e Padrões de Software (APSI)</h2> 
+        <h2>Ano letivo 2025/2026</h2>
+        
+        <div class="project-title">Arquitetura Inven!RA - Activity Provider – Sopa de Letras</div>
+        
+        <p>Bem-vindo. Abaixo encontra uma lista dos serviços REST disponíveis para integração:</p>
 
-        <h2>📡 Endpoints</h2>
+        <h3 class="section-title">📡 Endpoints</h3>
         <ul>
-            <li><a href="/config" target="_blank">/config</a> – Página de configuração da atividade</li>
-            <li><a href="/params" target="_blank">/params</a> – Lista de parâmetros configuráveis</li>
-            <li><a href="/analytics/available" target="_blank">/analytics/available</a> – Analytics disponíveis</li>
-            <li><a href="/deploy?activityID=TESTE123" target="_blank">/deploy?activityID=TESTE123</a> – Deploy de teste</li>
+            <li><a href="/config" target="_blank">/config</a> – Página de configuração da atividade (HTML)</li>
+            <li><a href="/params" target="_blank">/params</a> – Lista de parâmetros configuráveis (JSON)</li>
+            <li><a href="/analytics/available" target="_blank">/analytics/available</a> – Lista de analytics disponíveis (JSON)</li>
+            <li><a href="/deploy?activityID=TESTE123" target="_blank">/deploy?activityID=TESTE123</a> – Simulação de Deploy</li>
         </ul>
 
-        <h2>🧪 Teste de Analytics (POST)</h2>
+        <h3 class="section-title">🧪 Testes</h3>
         <ul>
             <li><a href="/static/teste_analytics_POST.html" target="_blank">Página de teste do POST /analytics</a></li>
         </ul>
 
-        <h2>🌐 Página principal da API</h2>
+        <h3 class="section-title">🌐 Debug</h3>
         <ul>
-            <li><a href="/" target="_blank">/</a> – Resposta padrão JSON</li>
+            <li><a href="/" target="_blank">/</a> – Resposta padrão da API (JSON)</li>
         </ul>
     </div>
 
