@@ -189,11 +189,15 @@ async def get_params():
 
 def _get_base_url() -> str:
     """
-    Tenta descobrir a BASE_URL a partir de variável de ambiente.
-    Se não existir, usa localhost. No Render, defina BASE_URL
-    como https://activity-provider-invenra.onrender.com
+        Pega o esquema (http/https) e o domínio atual automaticamente    
     """
-    return os.getenv("BASE_URL", "http://127.0.0.1:8000")
+    base_url = str(request.base_url).rstrip("/")
+
+    # Gera a URL correta independente de ser Local ou Render
+    return {
+        "activityID": activityID,
+        "user_url": f"{base_url}/play?activityID={activityID}"
+    }
 
 
 @app.get("/deploy")
