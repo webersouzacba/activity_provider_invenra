@@ -1,12 +1,13 @@
 from datetime import datetime
 import os
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import List, Union
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+
 
 app = FastAPI(
     title="Activity Provider – Sopa de Letras – Inven!RA",
@@ -187,16 +188,35 @@ async def get_params():
 # Deploy de atividade (user_url) – GET /deploy
 #    Primeira fase do deploy
 
-def _get_base_url() -> str:
+@app.get("/deploy")
+async def deploy_activity(
+    # <--- INJEÇÃO DE DEPENDÊNCIA: O FastAPI vai entregar o objeto request aqui
+    request: Request,
+    activityID: str = Query(...,
+                            description="ID da instância da atividade na Inven!RA")
+):
     """
-        Pega o esquema (http/https) e o domínio atual automaticamente    
+    Serviço de deploy (user_url) – primeira fase.
+    A Inven!RA faz um GET com o parâmetro activityID.
+    O Activity Provider prepara-se para guardar analytics e devolve
+    o URL que os alunos irão usar para aceder à atividade.
     """
+
+    # Lógica para obter o URL base dinamicamente (funciona local e no Render)
     base_url = str(request.base_url).rstrip("/")
 
-    # Gera a URL correta independente de ser Local ou Render
+    # Constrói o URL final
+    user_url = f"{base_url}/play?activityID={activityID}"
+
+    # Regista em memória (simulação) que esta atividade foi "deployada"
+    DEPLOYED_ACTIVITIES[activityID] = {
+        "user_url": user_url,
+        "created_at": datetime.utcnow().isoformat(),
+    }
+
     return {
         "activityID": activityID,
-        "user_url": f"{base_url}/play?activityID={activityID}"
+        "user_url": user_url,
     }
 
 
